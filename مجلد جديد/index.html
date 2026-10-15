@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>بوابة الوسطاء</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Tajawal,sans-serif;background:#fff;color:#1e293b;font-size:14px}
+button,input,select,textarea{font-family:inherit;font-size:14px}
+.hide{display:none!important}
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#eff6ff,#f3e8ff)}
+.card{background:#fff;border-radius:14px;padding:32px;width:370px;box-shadow:0 8px 30px #0001}
+.card h2{margin:0 0 20px;text-align:center}
+label{display:block;font-weight:700;margin:12px 0 6px;font-size:13px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #dbe4f0;border-radius:8px;background:#f8fafc}
+.btn{padding:10px 18px;border:0;border-radius:8px;cursor:pointer;background:#e2e8f0;color:#39495f;display:inline-flex;gap:6px;align-items:center}
+.btn.p{background:#2563eb;color:#fff}.btn.f{background:#bfdbfe;color:#1d4ed8}.btn.d{background:#fecdd3;color:#e11d48}
+.err{color:#dc2626;margin-top:10px;text-align:center;min-height:18px}
+#app{display:flex;min-height:100vh}
+aside{width:270px;background:linear-gradient(#fff,#eff6ff);border-left:1px solid #e5eaf2;padding:16px;flex-shrink:0}
+.user{border:1px solid #e5eaf2;border-radius:10px;padding:12px;display:flex;align-items:center;gap:10px;background:#fff;margin-bottom:20px;font-weight:700}
+.av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0}
+nav a{display:block;padding:11px 14px;border-radius:8px;color:#334155;cursor:pointer;margin:2px 0}
+nav a.on{background:#fff;color:#2563eb;box-shadow:0 1px 4px #0001}
+.sec{font-weight:700;margin:16px 14px 6px;font-size:13px}
+main{flex:1;min-width:0}
+header{height:70px;border-bottom:1px solid #e5eaf2;display:flex;align-items:center;justify-content:space-between;padding:0 24px}
+.logo{border:1px solid #e5eaf2;border-radius:10px;padding:8px 18px;font-weight:700}
+.page{padding:24px}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.bar h1{margin:0 0 0 auto}.bar input{width:220px}
+.tw{border:1px solid #dbe4f0;border-radius:10px;overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:820px}
+th{background:#eff6ff;padding:13px;text-align:right;font-size:13px}
+td{padding:13px;border-top:1px solid #e5eaf2}
+.cl{display:flex;align-items:center;gap:12px}.cl small{color:#64748b;direction:ltr;display:block;text-align:right}
+.mn{position:relative}.mn>div{position:absolute;left:0;top:38px;background:#fff;border:1px solid #dbe4f0;border-radius:10px;padding:8px;z-index:5;width:130px;display:flex;flex-direction:column;gap:6px;box-shadow:0 4px 16px #0002}
+.lnk{background:none;border:0;color:#2563eb;cursor:pointer}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}.filters select,.filters input{width:auto;min-width:140px}
+.md{position:fixed;inset:0;background:#0006;display:flex;align-items:flex-start;justify-content:center;padding:30px 10px;overflow:auto;z-index:20}
+.md>div{background:#f8fbff;border-radius:12px;width:760px;max-width:100%;padding:24px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.ph{display:flex;gap:6px;direction:ltr}.ph select{width:120px}
+.it{background:#fff;border:1px solid #e5eaf2;border-radius:8px;padding:10px;margin:8px 0}
+.it small{color:#64748b}.st{color:#f59e0b}
+.it small{color:#64748b}.st{color:#f59e0b}
+.pw{position:relative}
+.pm{position:absolute;left:0;top:48px;background:#fff;border:1px solid #dbe4f0;border-radius:12px;padding:16px;width:270px;z-index:15;box-shadow:0 4px 16px #0002}
+.sw{display:flex;gap:8px;flex-wrap:wrap}
+.sw span{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px #cbd5e1}
+.sw span.on{box-shadow:0 0 0 2px #2563eb}
+.grp{display:flex;justify-content:space-between;align-items:center;font-weight:700}
+#sub a{margin-right:16px}
+@media(max-width:800px){aside{display:none}.g2{grid-template-columns:1fr}}
+</style></head><body>
+
+<div id="login"><div class="card"><h2>تسجيل الدخول</h2>
+<label>البريد الإلكتروني</label><input id="lE" type="email" dir="ltr">
+<label>كلمة المرور</label><input id="lP" type="text" dir="ltr" autocomplete="off" style="-webkit-text-security:disc">
+<button class="btn p" id="lB" style="width:100%;justify-content:center;margin-top:18px">دخول</button>
+<div class="err" id="lErr"></div></div></div>
+
+<div id="app" class="hide">
+<aside>
+ <div class="user"><div class="av" id="uAv" style="background:#f0abfc"></div><span id="uName"></span></div>
+ <nav>
+  <a id="mg" class="grp"><span>إدارة العملاء</span><span id="ar">⌄</span></a>
+  <div id="sub"><a class="on">العملاء</a></div>
+  <a id="out">تسجيل الخروج</a>
+ </nav>
+</aside>
+<main>
+ <header><div class="logo">بوابة الوسطاء</div><div class="pw"><div class="av" id="hAv" style="background:#f0abfc;cursor:pointer"></div><div id="pm" class="pm hide"></div></div></header>
+ <div class="page">
+  <div class="bar">
+   
+   <h1>العملاء</h1>
+   <select id="cO" style="width:auto;min-width:200px"><option value="">الترتيب (الأحدث نشاطاً)</option><option value="old">الأقدم نشاطاً</option><option value="asc">متوسط تقييم العميل: من الأقل للأعلى</option><option value="desc">متوسط تقييم العميل: من الأعلى للأقل</option><option value="pasc">متوسط تقييم مشاريعه: من الأقل للأعلى</option><option value="pdesc">متوسط تقييم مشاريعه: من الأعلى للأقل</option></select>
+   <button class="btn f" id="fBtn">⏷ تصفية</button>
+   <button class="btn" id="imBtn">استيراد</button><input type="file" id="imF" class="hide" accept=".xlsx,.xlsm,.xlsb,.xltx">
+   <button class="btn" id="exBtn">تصدير</button>
+   <input id="q" placeholder="البحث بالاسم او الرقم">
+   <button class="btn p" id="addBtn">＋ اضافة عميل</button>
+  </div>
+  <div class="filters hide" id="fPan">
+   <select id="fS"></select><select id="fSt"></select>
+   <select id="fA"><option value="">آخر نشاط (الكل)</option><option value="7">آخر 7 ايام</option><option value="30">آخر 30 يوم</option><option value="180">آخر 6 اشهر</option><option value="365">آخر سنة</option><option value="c">مخصص</option></select>
+   <input type="date" id="fD" class="hide"><button class="btn p hide" id="fOk">موافق</button>
+   <input type="number" id="cR" min="0" max="5" step="0.1" placeholder="تصفية بمتوسط تقييم العميل" style="width:210px">
+<input type="number" id="cPR" min="0" max="5" step="0.1" placeholder="تصفية بمتوسط متوسط تقييمات المشاريع" style="width:430px">
+  </div>
+  <div class="tw"><table><thead><tr><th>العميل</th><th>المصدر</th><th>حالة العميل</th><th>تاريخ الاضافة</th><th>اخر نشاط</th><th>التواصل</th><th>خيارات</th></tr></thead><tbody id="tb"></tbody></table></div>
+ </div>
+</main></div>
+<div id="md" class="md hide"></div>
+
+<script>
+const SUPABASE_URL='https://iabgxunekkulsopdibeh.supabase.co', SUPABASE_KEY='sb_publishable_enI8tskfSHnbMe2cFBWaCQ_qMDembRB';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const SRC=['منصة مزادات','أخرى','لوحات إعلانية','وسيط','منصة عقارية','سناب شات','تويتر','فيسبوك','واتساب','مباشر للمنصة'];
+const STA=['جديد','محتمل','سابق'], TYP=['بائع','مشتري','مستثمر','مستأجر','اخرى'];
+const CC=[['+966','🇸🇦 السعودية'],['+971','🇦🇪 الإمارات'],['+965','🇰🇼 الكويت'],['+973','🇧🇭 البحرين'],['+974','🇶🇦 قطر'],['+968','🇴🇲 عمان'],['+20','🇪🇬 مصر'],['+962','🇯🇴 الأردن'],['+1','🇺🇸 أمريكا']];
+const RX={'+966':/^5\d{8}$/,'+971':/^5\d{8}$/,'+965':/^[569]\d{7}$/,'+973':/^[36]\d{7}$/,'+974':/^[3567]\d{7}$/,'+968':/^[79]\d{7}$/,'+20':/^1[0125]\d{8}$/,'+962':/^7[789]\d{7}$/,'+1':/^[2-9]\d{9}$/};
+const $=s=>document.getElementById(s);
+const e=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fd=d=>new Date(d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'2-digit',year:'numeric'}).replace(/,/g,'');
+const fdt=d=>new Date(d).toLocaleString('ar-SA');
+const opts=(a,sel,ph)=>(ph!==undefined?`<option value="">${ph}</option>`:'')+a.map(x=>`<option ${x===sel?'selected':''}>${e(x)}</option>`).join('');
+let me,users=[],rows=[],F={};
+
+// ---------- الدخول ----------
+async function init(){
+ const {data:{session}}=await sb.auth.getSession();
+ session?start(session.user):($('login').classList.remove('hide'));
+}
+$('lB').onclick=async()=>{
+ const em=$('lE').value.trim(),pw=$('lP').value,er=$('lErr');er.textContent='';
+ if(!em||!pw){er.textContent='اكتب الإيميل وكلمة المرور';return}
+ const {data:ex}=await sb.rpc('email_exists',{e:em});
+ if(!ex){er.textContent='خطأ: الإيميل غير موجود';return}
+ const {data,error}=await sb.auth.signInWithPassword({email:em,password:pw});
+ if(error){er.textContent='خطأ: كلمة المرور غير صحيحة';return}
+ start(data.user);
+};
+$('lP').onkeydown=ev=>{if(ev.key==='Enter')$('lB').click()};
+$('out').onclick=async()=>{await sb.auth.signOut();location.reload()};
+async function start(u){
+ $('login').classList.add('hide');$('app').classList.remove('hide');
+ const {data}=await sb.from('profiles').select('*').order('full_name');users=data||[];
+ me=users.find(x=>x.id===u.id)||{id:u.id,full_name:u.email,email:u.email};
+ paint();
+ $('fS').innerHTML=opts(SRC,'','المصدر');$('fSt').innerHTML=opts(STA,'','حالة العميل');
+ load();
+}
+// ---------- قائمة الحساب ----------
+const COL=['#0f172a','#2563eb','#dc2626','#16a34a','#9333ea','#ea580c','#0891b2','#db2777'];
+const BG=['#f0abfc','#bae6fd','#bbf7d0','#fde68a','#fecaca','#ddd6fe','#fed7aa','#e2e8f0'];
+function paint(){
+ [$('uAv'),$('hAv')].forEach(x=>{x.textContent=me.full_name.slice(0,2);x.style.background=me.bg_color||BG[0]});
+ $('uName').textContent=me.full_name;$('uName').style.color=me.name_color||'';
+}
+const sw=(a,cur,id)=>`<div class="sw" id="${id}">${a.map(c=>`<span data-c="${c}" style="background:${c}" class="${c===cur?'on':''}" onclick="pick(this)"></span>`).join('')}</div>`;
+function pick(s){s.parentNode.querySelectorAll('span').forEach(x=>x.classList.remove('on'));s.classList.add('on')}
+function pmenu(){
+ $('pm').innerHTML=`<label style="margin-top:0">الاسم</label><input id="pN" value="${e(me.full_name)}">
+ <label>لون الاسم</label>${sw(COL,me.name_color||COL[0],'pC')}
+ <label>لون الخلفية</label>${sw(BG,me.bg_color||BG[0],'pB')}
+ <button class="btn p" style="margin-top:14px;width:100%;justify-content:center" onclick="saveProf()">حفظ</button>`;
+}
+$('hAv').onclick=ev=>{ev.stopPropagation();const p=$('pm');if(p.classList.contains('hide')){pmenu();p.classList.remove('hide')}else p.classList.add('hide')};
+$('pm').onclick=ev=>ev.stopPropagation();
+document.addEventListener('click',()=>$('pm').classList.add('hide'));
+async function saveProf(){
+ const n=$('pN').value.trim();if(!n)return alert('اكتب الاسم');
+ const v={full_name:n,name_color:document.querySelector('#pC .on').dataset.c,bg_color:document.querySelector('#pB .on').dataset.c};
+ const {error}=await sb.from('profiles').update(v).eq('id',me.id);if(error)return alert(error.message);
+ Object.assign(me,v);const u=users.find(x=>x.id===me.id);if(u)Object.assign(u,v);
+ paint();$('pm').classList.add('hide');draw();
+}
+const okR=(v,f)=>f==null||(f===0?v==null:v!=null&&v>=f);
+async function calcAvg(){
+ const [{data:cn},{data:cp},{data:pn}]=await Promise.all([sb.from('client_notes').select('client_id,rating'),sb.from('client_projects').select('client_id,project_id'),sb.from('project_notes').select('project_id,rating')]);
+ const grp=(a,k)=>{const m={};(a||[]).forEach(r=>{if(r.rating)(m[r[k]]=m[r[k]]||[]).push(r.rating)});return m};
+ const av=a=>a&&a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+ const cm=grp(cn,'client_id'),pm=grp(pn,'project_id'),pa={},link={};
+ for(const k in pm)pa[k]=av(pm[k]);
+ (cp||[]).forEach(r=>{(link[r.client_id]=link[r.client_id]||[]).push(r.project_id)});
+ rows.forEach(c=>{c.avg=av(cm[c.id]);c.pavg=av((link[c.id]||[]).map(p=>pa[p]).filter(x=>x!=null))});
+}
+// ---------- القائمة والفلترة ----------
+async function load(){
+ const {data,error}=await sb.from('clients').select('*').order('last_activity',{ascending:false});
+ if(error)return alert(error.message);rows=data;await calcAvg();draw();
+}
+function draw(){
+ const q=$('q').value.trim().toLowerCase();
+ const l=rows.filter(c=>{
+  if(q){const d=q.replace(/\D/g,'').replace(/^0+/,'');const okN=c.name.toLowerCase().includes(q);const okP=d&&c.phone.replace(/\D/g,'').includes(d);if(!okN&&!okP)return false}
+  if(F.s&&c.source!==F.s)return false;if(F.st&&c.status!==F.st)return false;
+  if(!okR(c.avg,F.r)||!okR(c.pavg,F.pr))return false;
+  const t=new Date(c.last_activity);
+  if(F.days&&t<Date.now()-F.days*864e5)return false;
+  if(F.day&&t.toLocaleDateString('en-CA')!==F.day)return false;
+  return true});
+  if(F.o==='old')l.reverse();
+else if(F.o){const k=F.o[0]==='p'?'pavg':'avg',d=F.o.endsWith('asc')?1:-1;l.sort((a,b)=>a[k]==null?(b[k]==null?0:1):b[k]==null?-1:d*(a[k]-b[k]))}
+ $('tb').innerHTML=l.map(c=>`<tr>
+  <td><div class="cl"><div class="av" style="background:#bae6fd">${e(c.name.slice(0,2))}</div><div>${e(c.name)}<small>${e(c.phone)}</small></div></div></td>
+  <td><b>${e(c.source||'-')}</b></td><td><b>${e(c.status)}</b></td><td><b>${fd(c.created_at)}</b></td><td><b>${fd(c.last_activity)}</b></td>
+  <td><button class="lnk" onclick="wa('${e(c.phone)}')">💬 تواصل</button></td>
+  <td><div class="mn"><button class="btn" onclick="mnu(event,'${c.id}')">⋮</button></div></td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:#94a3b8">لا يوجد عملاء</td></tr>';
+}
+const wa=p=>window.open('https://web.whatsapp.com/send?phone='+p.replace(/\D/g,''),'_blank');
+function mnu(ev,id){
+ document.querySelectorAll('.mn>div').forEach(x=>x.remove());
+ const d=document.createElement('div');
+ d.innerHTML=`<button class="btn" onclick="view('${id}')">👁 عرض</button><button class="btn" onclick="openform('${id}')">✎ تعديل</button><button class="btn d" onclick="del('${id}')">🗑 حذف</button>`;
+ ev.currentTarget.parentNode.appendChild(d);ev.stopPropagation();
+}
+document.onclick=()=>document.querySelectorAll('.mn>div').forEach(x=>x.remove());
+$('q').oninput=draw;
+$('fBtn').onclick=()=>{const h=$('fPan').classList.toggle('hide');if(h){F={o:F.o};$('fS').value=$('fSt').value=$('fA').value=$('fD').value=$('cR').value=$('cPR').value='';$('fD').classList.add('hide');$('fOk').classList.add('hide');draw()}};
+$('fS').onchange=()=>{F.s=$('fS').value;draw()};$('fSt').onchange=()=>{F.st=$('fSt').value;draw()};
+$('fA').onchange=()=>{const v=$('fA').value,c=v==='c';$('fD').classList.toggle('hide',!c);$('fOk').classList.toggle('hide',!c);
+ F.days=c?0:+v;F.day='';if(!c)draw()};
+$('fOk').onclick=()=>{F.day=$('fD').value;draw()};
+const num=id=>{const v=parseFloat($(id).value);return isNaN(v)?null:Math.min(5,Math.max(0,v))};
+$('cR').oninput=()=>{F.r=num('cR');draw()};
+$('cPR').oninput=()=>{F.pr=num('cPR');draw()};
+$('cO').onchange=()=>{F.o=$('cO').value;draw()};
+
+
+// ---------- نموذج الإضافة/التعديل ----------
+const closeM=()=>$('md').classList.add('hide');
+const show=h=>{$('md').innerHTML='<div>'+h+'</div>';$('md').classList.remove('hide')};
+$('addBtn').onclick=()=>openform();
+function openform(id){
+ const c=rows.find(x=>x.id===id)||{status:'جديد',owner_id:me.id};
+ let cc='+966',num=c.phone||'';
+ for(const [k] of CC)if(num.startsWith(k)){cc=k;num=num.slice(k.length);break}
+ show(`<h3>${id?'تعديل عميل':'اضافة عميل'}</h3><div class="g2">
+ <div><label>اسم العميل</label><input id="fN" value="${e(c.name)}"></div>
+ <div><label>رقم الجوال</label><div class="ph"><select id="fC">${CC.map(([k,n])=>`<option value="${k}" ${k===cc?'selected':''}>${k} ${n}</option>`).join('')}</select><input id="fP" value="${e(num)}" inputmode="numeric" maxlength="11" oninput="this.value=this.value.replace(/\D/g,'')"></div></div>
+ <div><label>المصدر</label><select id="fSo">${opts(SRC,c.source,'')}</select></div>
+ <div><label>البريد</label><input id="fE" type="email" dir="ltr" value="${e(c.email)}"></div>
+ <div><label>حالة العميل</label><select id="fSt2">${opts(STA,c.status)}</select></div>
+ <div><label>نوع العميل</label><select id="fT">${opts(TYP,c.type,'')}</select></div>
+ <div><label>المسؤول</label><select id="fO">${users.map(u=>`<option value="${u.id}" ${u.id===c.owner_id?'selected':''}>${e(u.full_name)}</option>`).join('')}</select></div></div>
+ <label>ملاحظات</label><textarea id="fNo" rows="4">${e(c.notes)}</textarea>
+ <div style="margin-top:16px"><button class="btn p" onclick="save('${id||''}')">💾 حفظ</button> <button class="btn lnk" onclick="closeM()" style="color:#334155">الغاء</button></div>`);
+}
+async function save(id){
+ const v={name:$('fN').value.trim(),phone:$('fC').value+$('fP').value.replace(/\D/g,'').replace(/^0+/,''),source:$('fSo').value,email:$('fE').value.trim(),
+  status:$('fSt2').value,type:$('fT').value,owner_id:$('fO').value,notes:$('fNo').value,last_activity:new Date().toISOString()};
+ const num=v.phone.slice($('fC').value.length),er=[];
+if(v.name.length<2)er.push('• اكتب اسم العميل');
+if(!RX[$('fC').value].test(num))er.push('• رقم الجوال غير صحيح لهذه الدولة');
+else if(rows.some(x=>x.phone===v.phone&&x.id!==id))er.push('• رقم الجوال مسجل لعميل آخر');
+if(!v.source)er.push('• اختر المصدر');
+if(!/^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/.test(v.email))er.push('• البريد الإلكتروني غير صحيح');
+if(!v.status)er.push('• اختر حالة العميل');
+if(!v.type)er.push('• اختر نوع العميل');
+if(!v.owner_id)er.push('• اختر المسؤول');
+if(er.length)return alert('لا يمكن الحفظ:\n'+er.join('\n'));
+ if(id){
+  const old=rows.find(x=>x.id===id),L={name:'الاسم',phone:'الجوال',source:'المصدر',email:'البريد',status:'الحالة',type:'النوع',owner_id:'المسؤول',notes:'الملاحظات'};
+  const ch=Object.keys(L).filter(k=>(old[k]||'')!==(v[k]||'')).map(k=>k==='owner_id'?`${L[k]}: ${name(old[k])} ← ${name(v[k])}`:`${L[k]}: "${old[k]||''}" ← "${v[k]||''}"`);
+  const {error}=await sb.from('clients').update(v).eq('id',id);if(error)return alert(error.message);
+  if(ch.length)await lg(id,'تعديل بيانات',ch.join(' | '));
+ }else{
+  const {data,error}=await sb.from('clients').insert(v).select().single();if(error)return alert(error.message);
+  await lg(data.id,'إضافة عميل','تمت إضافة العميل');
+ }
+ closeM();load();
+}
+const name=i=>(users.find(u=>u.id===i)||{}).full_name||'-';
+const lg=(id,a,d)=>sb.from('client_log').insert({client_id:id,action:a,details:d,author:me.full_name});
+async function del(id){if(!confirm('حذف العميل نهائياً؟'))return;await sb.from('clients').delete().eq('id',id);load()}
+
+// ---------- العرض: الملاحظات والسجل ----------
+async function view(id){
+ const c=rows.find(x=>x.id===id);
+ const [{data:n},{data:g}]=await Promise.all([sb.from('client_notes').select('*').eq('client_id',id).order('created_at',{ascending:false}),sb.from('client_log').select('*').eq('client_id',id).order('created_at',{ascending:false})]);
+ show(`<h3>${e(c.name)} <small style="font-weight:400;direction:ltr;display:inline-block">${e(c.phone)}</small></h3>
+المسؤول: <b style="color:${e((users.find(x=>x.id===c.owner_id)||{}).name_color||'inherit')}">${e(name(c.owner_id))}</b>
+ ${c.notes?`<div class="it"><small>الملاحظات الأساسية</small><br>${e(c.notes)}</div>`:''}
+ <h4>الملاحظات</h4>
+ <div class="g2"><div><textarea id="nB" rows="2" placeholder="اكتب ملاحظة"></textarea></div>
+ <div><select id="nR"><option value="5">⭐⭐⭐⭐⭐ ممتاز</option><option value="4">⭐⭐⭐⭐ جيد جداً</option><option value="3">⭐⭐⭐ جيد</option><option value="2">⭐⭐ ضعيف</option><option value="1">⭐ سيء</option></select>
+ <button class="btn p" style="margin-top:8px" onclick="addNote('${id}')">إضافة ملاحظة</button></div></div>
+ ${(n||[]).map(x=>`<div class="it"><span class="st">${'★'.repeat(x.rating||0)}${'☆'.repeat(5-(x.rating||0))}</span> ${e(x.body)}<br><small>${e(x.author)} • ${fdt(x.created_at)}</small></div>`).join('')||'<p style="color:#94a3b8">لا توجد ملاحظات</p>'}
+<div class="it" style="display:inline-block;padding:6px 12px">متوسط تقييمات العميل: <b class="st">${n&&n.length?(n.reduce((s,x)=>s+(x.rating||0),0)/n.length).toFixed(1)+' ★':'لا يوجد'}</b>${n&&n.length?` <small>(${n.length} تقييم)</small>`:''}</div>
+ <div class="it" style="display:inline-block;padding:6px 12px">متوسط تقييمات المشاريع المرتبطة: <b class="st">${c.pavg!=null?c.pavg.toFixed(1)+' ★':'لا يوجد'}</b></div>
+ <h4>سجل التغييرات</h4>
+ ${(g||[]).map(x=>`<div class="it"><b>${e(x.action)}</b>: ${e(x.details)}<br><small>${e(x.author)} • ${fdt(x.created_at)}</small></div>`).join('')}
+ <button class="btn" onclick="closeM()" style="margin-top:12px">إغلاق</button>`);
+}
+async function addNote(id){
+ const b=$('nB').value.trim();if(!b)return;
+ await sb.from('client_notes').insert({client_id:id,body:b,rating:+$('nR').value,author:me.full_name});
+ await lg(id,'إضافة ملاحظة',b.slice(0,80));
+ await sb.from('clients').update({last_activity:new Date().toISOString()}).eq('id',id);
+ await load();view(id);
+}
+
+// ---------- تصدير / استيراد ----------
+$('exBtn').onclick=()=>{
+ const d=rows.map(c=>({'الاسم':c.name,'الجوال':c.phone,'المصدر':c.source,'البريد':c.email,'الحالة':c.status,'النوع':c.type,'المسؤول':name(c.owner_id),'ملاحظات':c.notes,'تاريخ الإضافة':fdt(c.created_at),'آخر نشاط':fdt(c.last_activity)}));
+ const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(d),'العملاء');XLSX.writeFile(wb,'clients.xlsx');
+};
+$('imBtn').onclick=()=>show(`<h3>استيراد عملاء من ملف Excel</h3>
+<p>الانواع المقبولة: xlsx وxlsm وxlsb وxltx. يقرأ <b>أول ورقة</b> فقط، وأول صف لازم يكون عناوين الأعمدة مكتوبة بالضبط كما في الجدول.</p>
+<div style="overflow:auto"><table style="min-width:0;background:#fff"><tr><th>العمود</th><th>مطلوب</th><th>نوع القيمة</th></tr>
+<tr><td><b>الاسم</b></td><td>نعم</td><td>نص من حرفين أو أكثر</td></tr>
+<tr><td><b>الجوال</b></td><td>نعم</td><td>رقم صحيح حسب الدولة (التفاصيل تحت)</td></tr>
+<tr><td><b>المصدر</b></td><td>نعم</td><td>${SRC.map(e).join('، ')}</td></tr>
+<tr><td><b>البريد</b></td><td>نعم</td><td>بريد صحيح مثل name@mail.com</td></tr>
+<tr><td><b>الحالة</b></td><td>نعم</td><td>${STA.map(e).join('، ')}</td></tr>
+<tr><td><b>النوع</b></td><td>نعم</td><td>${TYP.map(e).join('، ')}</td></tr>
+<tr><td><b>ملاحظات</b></td><td>لا</td><td>أي نص</td></tr></table></div>
+<h4>ملاحظات مهمة</h4>
+<div class="it">• أي عمود ثاني في الملف (مثل المسؤول أو تاريخ الإضافة) <b>يتم تجاهله</b>، والمسؤول يصير أنت.</div>
+<div class="it">• عناوين الأعمدة وقيم <b>المصدر والحالة والنوع</b> لازم تطابق النص <b>100%</b> حرفاً بحرف، مثل الفرق بين <b>أحمد</b> و<b>احمد</b>. مثلاً المصدر يُكتب «أخرى» (بهمزة) والنوع يُكتب «اخرى» (بدون همزة). أي اختلاف يجعل الصف مرفوضاً.</div>
+<div class="it">• اجعل عمود الجوال بنوع <b>نص (Text)</b> في Excel حتى لا يحذف الصفر أو علامة +.</div>
+<div class="it">• الجوال السعودي يُقبل بدون كود (مثل 0500111321). أما بقية الدول فاكتب الرقم مع كود الدولة وعلامة + (مثل +971501234567).</div>
+<div class="it">• الأرقام المكررة (الموجودة عند عميل آخر أو المكررة داخل الملف) تُتجاهل، والصفوف الغلط تُتجاهل وتظهر لك أرقامها بعد الاستيراد.</div>
+<h4>الدول المقبولة فقط</h4>
+<div class="it" style="direction:rtl">${CC.map(([k,n])=>`<span style="display:inline-block;margin:3px 10px 3px 0"><b dir="ltr">${k}</b> ${e(n)}</span>`).join('')}</div>
+<div style="margin-top:16px"><button class="btn p" onclick="closeM();$('imF').click()">📂 اختيار الملف</button> <button class="btn lnk" onclick="closeM()" style="color:#334155">الغاء</button></div>`);
+$('imF').onchange=async ev=>{
+ const f=ev.target.files[0];if(!f)return;
+ try{
+  const wb=XLSX.read(await f.arrayBuffer());const js=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+  const have=new Set(rows.map(c=>c.phone));
+  const ins=js.map(r=>({name:String(r['الاسم']||r['name']||'').trim(),phone:String(r['الجوال']||r['phone']||'').replace(/[^\d+]/g,''),source:r['المصدر']||null,email:r['البريد']||null,
+   status:STA.includes(r['الحالة'])?r['الحالة']:'جديد',type:r['النوع']||null,notes:r['ملاحظات']||null,owner_id:me.id}))
+   .filter(r=>r.name&&r.phone&&!have.has(r.phone));
+  if(!ins.length)alert('لا يوجد عملاء جدد في الملف');
+  else{const {error}=await sb.from('clients').insert(ins);if(error)throw error;alert('تمت إضافة '+ins.length+' عميل جديد')}
+  load();
+ }catch(x){alert('خطأ في الملف: '+(x.message||x))}
+ ev.target.value='';
+};
+$('mg').onclick=()=>{const s=$('sub'),o=s.classList.toggle('hide');$('ar').textContent=o?'‹':'⌄'};
+init();
+</script>
+<script src="projects.js"></script>
+</body>
+</html>
