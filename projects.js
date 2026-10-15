@@ -18,11 +18,12 @@ PP.innerHTML=`<div class="bar"><h1>المشاريع</h1><button class="btn f" id
 $('sub').innerHTML='<a id="nC" class="on">العملاء</a>';
 document.head.insertAdjacentHTML('beforeend','<style>#sub2 a{margin-right:16px}#mg2{margin-top:10px}</style>');
 $('sub').insertAdjacentHTML('afterend','<a id="mg2" class="grp"><span>إدارة المشاريع</span><span id="ar2">⌄</span></a><div id="sub2"><a id="nP">المشاريع</a></div>');
+<a id="adminNotifBtn" onclick="openAdminNotifModal()" style="cursor:pointer;padding-right:15px;color:#2563eb;font-size:13px;">📢 إرسال إشعار للموظفين</a>
 $('mg2').onclick=()=>{const o=$('sub2').classList.toggle('hide');$('ar2').textContent=o?'‹':'⌄'};
 function Pgo(p){CP.classList.toggle('hide',!!p);PP.classList.toggle('hide',!p);$('nC').classList.toggle('on',!p);$('nP').classList.toggle('on',!!p);if(p)Pload();else load()}
 $('nC').onclick=()=>Pgo(0);$('nP').onclick=()=>Pgo(1);
 $('pfT').innerHTML=opts(PT,'','النوع');$('pfS').innerHTML=opts(PS,'','الحالة');
-
+const {error}=await sb.from('clients').update({owner_id:to,last_activity:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);
 async function Pfetch(){
  const {data,error}=await sb.from('projects').select('*').order('last_activity',{ascending:false});if(error)return alert(error.message);PR=data;
  const {data:rt}=await sb.from('project_notes').select('project_id,rating');const m={};
@@ -242,9 +243,108 @@ function Ptr(id){
  ${o.length?`<label>نقل إلى</label><select id="tS">${o.map(u=>`<option value="${u.id}">${e(u.full_name)}</option>`).join('')}</select>
  <div style="margin-top:16px"><button class="btn p" onclick="PtrOk('${id}')">نقل</button> <button class="btn lnk" onclick="closeM()" style="color:#334155">الغاء</button></div>`:'<p style="color:#dc2626">لا يوجد موظف آخر مسجل.</p><button class="btn" onclick="closeM()">إغلاق</button>'}`);
 }
-async function PtrOk(id){
+function PtrOk(id){
  const to=$('tS').value;if(!confirm('نقل العميل إلى '+name(to)+'؟'))return;
- const {error}=await sb.from('clients').update({owner_id:to,last_activity:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);
- await lg(id,'نقل عميل',name(me.id)+' ← '+name(to));
- closeM();load();
+ (async()=>{
+  const {error}=await sb.from('clients').update({owner_id:to,last_activity:new Date().toISOString()}).eq('id',id);
+  if(error)return alert(error.message);
+  await lg(id,'نقل عميل',name(me.id)+' ← '+name(to));
+  closeM();load();
+ })();
+}
+// ---- نظام الإشعارات ----
+async function loadNotifications() {
+  if (!me) return;
+  const { data, error } = await sb.from('notifications')
+    .select('*')
+    .or(`user_id.is.null,user_id.eq.${me.id}`)
+    .order('created_at', { ascending: false });
+  
+  if (error) return;
+  
+  const unread = (data || []).filter(n => !n.is_read);
+  const badge = $('notifBadge');
+  if (unread.length > 0) {
+    badge.textContent = unread.length;
+    badge.classList.remove('hide');
+  } else {
+    badge.classList.add('hide');
+  }
+
+  const list = $('notifList');
+  if (!data || data.length === 0) {
+    list.innerHTML = '<p style="color:#94a3b8;text-align:center;margin:10px 0;">لا توجد إشعارات</p>';
+    return;
+  }
+
+  list.innerHTML = data.map(n => `
+    <div style="background:${n.is_read ? '#f8fafc' : '#eff6ff'};border:1px solid #e5eaf2;border-radius:8px;padding:8px;cursor:pointer;" onclick="markRead('${n.id}')">
+      <div style="font-weight:700;font-size:13px;margin-bottom:2px;">${e(n.title)}</div>
+      <div style="font-size:12px;color:#334155;">${e(n.body)}</div>
+      <small style="color:#64748b;font-size:10px;display:block;margin-top:4px;">${fdt(n.created_at)}</small>
+    </div>
+  `).join('');
+}
+
+async function markRead(id) {
+  await sb.from('notifications').update({ is_read: true }).eq('id', id);
+  loadNotifications();
+}
+
+async function markAllRead() {
+  if (!me) return;
+  await sb.from('notifications').update({ is_read: true }).or(`user_id.is.null,user_id.eq.${me.id}`);
+  loadNotifications();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const notifBtn = $('notifBtn');
+  const notifMenu = $('notifMenu');
+  if (notifBtn && notifMenu) {
+    notifBtn.onclick = ev => {
+      ev.stopPropagation();
+      notifMenu.classList.toggle('hide');
+      if (!notifMenu.classList.contains('hide')) loadNotifications();
+    };
+    notifMenu.onclick = ev => ev.stopPropagation();
+  }
+});
+
+setInterval(loadNotifications, 30000);
+// ---- وظائف إرسال الإشعارات والتذكيرات ----
+
+async function sendAdminNotification(title, body) {
+  const { error } = await sb.from('notifications').insert({
+    user_id: null,
+    title: title,
+    body: body,
+    is_read: false
+  });
+  if (error) {
+    alert('خطأ في إرسال الإشعار: ' + error.message);
+  } else {
+    alert('تم إرسال الإشعار بنجاح لجميع الموظفين');
+  }
+}
+
+function openAdminNotifModal() {
+  show(`
+    <h3>إرسال إشعار لجميع الموظفين</h3>
+    <label>عنوان الإشعار</label>
+    <input id="adNotifTitle" placeholder="مثال: تنبيه هام">
+    <label>محتوى الرسالة</label>
+    <textarea id="adNotifBody" rows="4" placeholder="اكتب تفاصيل الإشعار هنا..."></textarea>
+    <div style="margin-top:16px">
+      <button class="btn p" onclick="submitAdminNotif()">إرسال للجميع</button>
+      <button class="btn lnk" onclick="closeM()" style="color:#334155">إلغاء</button>
+    </div>
+  `);
+}
+
+async function submitAdminNotif() {
+  const title = $('adNotifTitle').value.trim();
+  const body = $('adNotifBody').value.trim();
+  if (!title || !body) return alert('الرجاء كتابة العنوان والمحتوى');
+  await sendAdminNotification(title, body);
+  closeM();
 }
