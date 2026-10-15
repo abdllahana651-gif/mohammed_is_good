@@ -246,7 +246,7 @@ function Ptr(id){
 function PtrOk(id){
  const to=$('tS').value;if(!confirm('نقل العميل إلى '+name(to)+'؟'))return;
  (async()=>{
-  const {error}=await sb.from('clients').update({owner_id:to,last_activity:new Date().toISOString()}).eq('id',id);
+  
   if(error)return alert(error.message);
   await lg(id,'نقل عميل',name(me.id)+' ← '+name(to));
   closeM();load();
