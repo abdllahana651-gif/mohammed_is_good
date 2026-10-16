@@ -242,14 +242,11 @@ function Ptr(id){
  ${o.length?`<label>نقل إلى</label><select id="tS">${o.map(u=>`<option value="${u.id}">${e(u.full_name)}</option>`).join('')}</select>
  <div style="margin-top:16px"><button class="btn p" onclick="PtrOk('${id}')">نقل</button> <button class="btn lnk" onclick="closeM()" style="color:#334155">الغاء</button></div>`:'<p style="color:#dc2626">لا يوجد موظف آخر مسجل.</p><button class="btn" onclick="closeM()">إغلاق</button>'}`);
 }
-function PtrOk(id){
- const to=$('tS').value;if(!confirm('نقل العميل إلى '+name(to)+'؟'))return;
- (async()=>{
-
-  if(error)return alert(error.message);
-  await lg(id,'نقل عميل',name(me.id)+' ← '+name(to));
-  closeM();load();
- })();
+async function PtrOk(id){
+ const to=$('tS').value;
+ const {error}=await sb.rpc('transfer_client',{cid:id,to_id:to});
+ if(error)return alert('سبب الفشل: '+error.message);
+ alert('تم نقل العميل إلى '+name(to));closeM();load();
 }
 // ---- نظام الإشعارات ----
 async function loadNotifications() {
