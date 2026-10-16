@@ -20,7 +20,7 @@ document.head.insertAdjacentHTML('beforeend','<style>#sub2 a{margin-right:16px}#
 $('sub').insertAdjacentHTML('afterend','<a id="mg2" class="grp"><span>إدارة المشاريع</span><span id="ar2">⌄</span></a><div id="sub2"><a id="nP">المشاريع</a></div>');
 
 $('mg2').onclick=()=>{const o=$('sub2').classList.toggle('hide');$('ar2').textContent=o?'‹':'⌄'};
-function Pgo(p){CP.classList.toggle('hide',!!p);PP.classList.toggle('hide',!p);$('nC').classList.toggle('on',!p);$('nP').classList.toggle('on',!!p);if(p)Pload();else load()}
+function Pgo(p){CP.classList.toggle('hide',p!==0);PP.classList.toggle('hide',p!==1);NP.classList.toggle('hide',p!==2);$('nC').classList.toggle('on',p===0);$('nP').classList.toggle('on',p===1);$('nS').classList.toggle('on',p===2);if(p===1)Pload();if(p===0)load()}
 $('nC').onclick=()=>Pgo(0);$('nP').onclick=()=>Pgo(1);
 $('pfT').innerHTML=opts(PT,'','النوع');$('pfS').innerHTML=opts(PS,'','الحالة');
 async function Pfetch(){
@@ -249,98 +249,51 @@ async function PtrOk(id){
  alert('تم نقل العميل إلى '+name(to));closeM();load();
 }
 // ---- نظام الإشعارات ----
-async function loadNotifications() {
-  if (!me) return;
-  const { data, error } = await sb.from('notifications')
-    .select('*')
-    .or(`user_id.is.null,user_id.eq.${me.id}`)
-    .order('created_at', { ascending: false });
-  
-  if (error) return;
-  
-  const unread = (data || []).filter(n => !n.is_read);
-  const badge = $('notifBadge');
-  if (unread.length > 0) {
-    badge.textContent = unread.length;
-    badge.classList.remove('hide');
-  } else {
-    badge.classList.add('hide');
-  }
-
-  const list = $('notifList');
-  if (!data || data.length === 0) {
-    list.innerHTML = '<p style="color:#94a3b8;text-align:center;margin:10px 0;">لا توجد إشعارات</p>';
-    return;
-  }
-
-  list.innerHTML = data.map(n => `
-    <div style="background:${n.is_read ? '#f8fafc' : '#eff6ff'};border:1px solid #e5eaf2;border-radius:8px;padding:8px;cursor:pointer;" onclick="markRead('${n.id}')">
-      <div style="font-weight:700;font-size:13px;margin-bottom:2px;">${e(n.title)}</div>
-      <div style="font-size:12px;color:#334155;">${e(n.body)}</div>
-      <small style="color:#64748b;font-size:10px;display:block;margin-top:4px;">${fdt(n.created_at)}</small>
-    </div>
-  `).join('');
+const NMY=new Set();let NT=null;
+$('notifMenu').innerHTML=`<div style="text-align:center;margin-bottom:8px"><button class="btn lnk" onclick="nLimToggle()">⚙ حد الإشعارات</button></div>
+<div id="nLimBox" class="hide" style="display:flex;gap:6px;margin-bottom:8px"><input type="number" id="nLimIn" min="1" max="100"><button class="btn p" onclick="nLimSave()">حفظ</button></div>
+<div id="nList" style="max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:6px"></div>`;
+$('notifBtn').onclick=ev=>{ev.stopPropagation();const m=$('notifMenu');m.classList.toggle('hide');if(!m.classList.contains('hide'))loadNotifications()};
+$('notifMenu').onclick=ev=>ev.stopPropagation();
+document.addEventListener('click',()=>$('notifMenu').classList.add('hide'));
+async function loadNotifications(){
+ if(typeof me==='undefined'||!me||!me.id)return;
+ const {data,error}=await sb.from('notifications').select('*').or(`user_id.is.null,user_id.eq.${me.id}`).order('created_at',{ascending:false}).limit(me.notif_limit||50);
+ if(error)return;
+ const ids=(data||[]).map(n=>n.id),cnt={};
+ if(ids.length){const {data:rd}=await sb.from('notification_reads').select('notification_id,user_id').in('notification_id',ids);
+  (rd||[]).forEach(r=>{cnt[r.notification_id]=(cnt[r.notification_id]||0)+1;if(r.user_id===me.id)NMY.add(r.notification_id)})}
+ const b=$('notifBadge');b.textContent=ids.length;b.classList.toggle('hide',!ids.length);
+ $('nList').innerHTML=ids.length?data.map(n=>`<div class="it" style="margin:0;background:${NMY.has(n.id)?'#f8fafc':'#eff6ff'}" onmouseenter="nHover('${n.id}')" onmouseleave="clearTimeout(NT)" ontouchstart="nHover('${n.id}')" ontouchend="clearTimeout(NT)">
+  ${me.is_admin?`<button class="lnk" style="float:left;color:#e11d48" onclick="nDel('${n.id}')">✕</button>`:''}
+  <div style="font-weight:700;font-size:13px">${e(n.title)}</div><div style="font-size:12px">${e(n.body)}</div>
+  <small>${fdt(n.created_at)} • قرأها: <b id="nc_${n.id}">${cnt[n.id]||0}</b></small></div>`).join(''):'<p style="color:#94a3b8;text-align:center">لا توجد إشعارات</p>';
 }
-
-async function markRead(id) {
-  await sb.from('notifications').update({ is_read: true }).eq('id', id);
-  loadNotifications();
+function nHover(id){
+ clearTimeout(NT);if(me.is_admin||NMY.has(id))return;
+ NT=setTimeout(async()=>{NMY.add(id);const {error}=await sb.from('notification_reads').insert({notification_id:id,user_id:me.id});
+  if(!error){const c=$('nc_'+id);if(c)c.textContent=+c.textContent+1}},3000);
 }
-
-async function markAllRead() {
-  if (!me) return;
-  await sb.from('notifications').update({ is_read: true }).or(`user_id.is.null,user_id.eq.${me.id}`);
-  loadNotifications();
+async function nDel(id){if(!confirm('حذف الإشعار للجميع؟'))return;const {error}=await sb.from('notifications').delete().eq('id',id);if(error)return alert(error.message);loadNotifications()}
+function nLimToggle(){const b=$('nLimBox');b.classList.toggle('hide');$('nLimIn').value=me.notif_limit||50}
+async function nLimSave(){
+ const v=Math.round(+$('nLimIn').value);if(!(v>=1&&v<=100))return alert('اختر رقماً من 1 إلى 100');
+ const {error}=await sb.from('profiles').update({notif_limit:v}).eq('id',me.id);if(error)return alert(error.message);
+ me.notif_limit=v;$('nLimBox').classList.add('hide');loadNotifications();
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-  const notifBtn = $('notifBtn');
-  const notifMenu = $('notifMenu');
-  if (notifBtn && notifMenu) {
-    notifBtn.onclick = ev => {
-      ev.stopPropagation();
-      notifMenu.classList.toggle('hide');
-      if (!notifMenu.classList.contains('hide')) loadNotifications();
-    };
-    notifMenu.onclick = ev => ev.stopPropagation();
-  }
-});
-
-setInterval(loadNotifications, 30000);
-// ---- وظائف إرسال الإشعارات والتذكيرات ----
-
-async function sendAdminNotification(title, body) {
-  const { error } = await sb.from('notifications').insert({
-    user_id: null,
-    title: title,
-    body: body,
-    is_read: false
-  });
-  if (error) {
-    alert('خطأ في إرسال الإشعار: ' + error.message);
-  } else {
-    alert('تم إرسال الإشعار بنجاح لجميع الموظفين');
-  }
+// ---- قسم الموظفين وصفحة الإرسال (للمشرف) ----
+document.head.insertAdjacentHTML('beforeend','<style>#sub3 a{margin-right:16px}#mg3{margin-top:10px}</style>');
+$('sub2').insertAdjacentHTML('afterend','<a id="mg3" class="grp" style="display:none"><span>الموظفين</span><span id="ar3">⌄</span></a><div id="sub3" style="display:none"><a id="nS">إرسال الإشعارات</a></div>');
+$('mg3').onclick=()=>{const o=$('sub3').classList.toggle('hide');$('ar3').textContent=o?'‹':'⌄'};
+$('nS').onclick=()=>Pgo(2);
+const NP=document.createElement('div');NP.className='page hide';PP.after(NP);
+NP.innerHTML=`<div class="bar"><h1>إرسال الإشعارات</h1></div><div style="max-width:600px"><label>نص الإشعار</label><textarea id="nsB" rows="5" placeholder="اكتب الإشعار هنا..."></textarea>
+<div style="margin-top:14px"><button class="btn p" onclick="nSend()">📢 إرسال لجميع الموظفين</button></div></div>`;
+async function nSend(){
+ const b=$('nsB').value.trim();if(b.length<2)return alert('اكتب الإشعار');
+ const {error}=await sb.from('notifications').insert({user_id:null,title:'إشعار من '+me.full_name,body:b});if(error)return alert(error.message);
+ $('nsB').value='';alert('تم الإرسال');loadNotifications();
 }
-
-function openAdminNotifModal() {
-  show(`
-    <h3>إرسال إشعار لجميع الموظفين</h3>
-    <label>عنوان الإشعار</label>
-    <input id="adNotifTitle" placeholder="مثال: تنبيه هام">
-    <label>محتوى الرسالة</label>
-    <textarea id="adNotifBody" rows="4" placeholder="اكتب تفاصيل الإشعار هنا..."></textarea>
-    <div style="margin-top:16px">
-      <button class="btn p" onclick="submitAdminNotif()">إرسال للجميع</button>
-      <button class="btn lnk" onclick="closeM()" style="color:#334155">إلغاء</button>
-    </div>
-  `);
-}
-
-async function submitAdminNotif() {
-  const title = $('adNotifTitle').value.trim();
-  const body = $('adNotifBody').value.trim();
-  if (!title || !body) return alert('الرجاء كتابة العنوان والمحتوى');
-  await sendAdminNotification(title, body);
-  closeM();
-}
+const nTimer=setInterval(()=>{if(typeof me!=='undefined'&&me&&me.id){clearInterval(nTimer);
+ if(me.is_admin){$('mg3').style.display='';$('sub3').style.display=''}
+ loadNotifications();setInterval(loadNotifications,30000)}},500);
