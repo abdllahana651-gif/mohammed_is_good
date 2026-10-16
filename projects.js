@@ -18,12 +18,11 @@ PP.innerHTML=`<div class="bar"><h1>المشاريع</h1><button class="btn f" id
 $('sub').innerHTML='<a id="nC" class="on">العملاء</a>';
 document.head.insertAdjacentHTML('beforeend','<style>#sub2 a{margin-right:16px}#mg2{margin-top:10px}</style>');
 $('sub').insertAdjacentHTML('afterend','<a id="mg2" class="grp"><span>إدارة المشاريع</span><span id="ar2">⌄</span></a><div id="sub2"><a id="nP">المشاريع</a></div>');
-<a id="adminNotifBtn" onclick="openAdminNotifModal()" style="cursor:pointer;padding-right:15px;color:#2563eb;font-size:13px;">📢 إرسال إشعار للموظفين</a>
+
 $('mg2').onclick=()=>{const o=$('sub2').classList.toggle('hide');$('ar2').textContent=o?'‹':'⌄'};
 function Pgo(p){CP.classList.toggle('hide',!!p);PP.classList.toggle('hide',!p);$('nC').classList.toggle('on',!p);$('nP').classList.toggle('on',!!p);if(p)Pload();else load()}
 $('nC').onclick=()=>Pgo(0);$('nP').onclick=()=>Pgo(1);
 $('pfT').innerHTML=opts(PT,'','النوع');$('pfS').innerHTML=opts(PS,'','الحالة');
-const {error}=await sb.from('clients').update({owner_id:to,last_activity:new Date().toISOString()}).eq('id',id);if(error)return alert(error.message);
 async function Pfetch(){
  const {data,error}=await sb.from('projects').select('*').order('last_activity',{ascending:false});if(error)return alert(error.message);PR=data;
  const {data:rt}=await sb.from('project_notes').select('project_id,rating');const m={};
@@ -246,7 +245,7 @@ function Ptr(id){
 function PtrOk(id){
  const to=$('tS').value;if(!confirm('نقل العميل إلى '+name(to)+'؟'))return;
  (async()=>{
-  
+
   if(error)return alert(error.message);
   await lg(id,'نقل عميل',name(me.id)+' ← '+name(to));
   closeM();load();
