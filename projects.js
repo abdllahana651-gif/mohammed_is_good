@@ -253,26 +253,43 @@ const NMY=new Set();let NT=null;
 $('notifMenu').innerHTML=`<div style="text-align:center;margin-bottom:8px"><button class="btn lnk" onclick="nLimToggle()">⚙ حد الإشعارات</button></div>
 <div id="nLimBox" class="hide" style="display:flex;gap:6px;margin-bottom:8px"><input type="number" id="nLimIn" min="1" max="100"><button class="btn p" onclick="nLimSave()">حفظ</button></div>
 <div id="nList" style="max-height:300px;overflow:auto;display:flex;flex-direction:column;gap:6px"></div>`;
-$('notifBtn').onclick=ev=>{ev.stopPropagation();const m=$('notifMenu');m.classList.toggle('hide');if(!m.classList.contains('hide'))loadNotifications()};
+const NTM={};let NOBS=null;
+const nOpen=()=>!$('notifMenu').classList.contains('hide');
+function nStop(){Object.keys(NTM).forEach(k=>{clearTimeout(NTM[k]);delete NTM[k]});if(NOBS){NOBS.disconnect();NOBS=null}}
+$('notifBtn').onclick=ev=>{ev.stopPropagation();$('notifMenu').classList.toggle('hide');if(nOpen())loadNotifications(true);else nStop()};
 $('notifMenu').onclick=ev=>ev.stopPropagation();
-document.addEventListener('click',()=>$('notifMenu').classList.add('hide'));
-async function loadNotifications(){
+document.addEventListener('click',()=>{$('notifMenu').classList.add('hide');nStop()});
+async function loadNotifications(force){
  if(typeof me==='undefined'||!me||!me.id)return;
  const {data,error}=await sb.from('notifications').select('*').or(`user_id.is.null,user_id.eq.${me.id}`).order('created_at',{ascending:false}).limit(me.notif_limit||50);
  if(error)return;
- const ids=(data||[]).map(n=>n.id),cnt={};
+ const own=n=>n.sender_id===me.id,ids=(data||[]).map(n=>n.id),cnt={};
  if(ids.length){const {data:rd}=await sb.from('notification_reads').select('notification_id,user_id').in('notification_id',ids);
   (rd||[]).forEach(r=>{cnt[r.notification_id]=(cnt[r.notification_id]||0)+1;if(r.user_id===me.id)NMY.add(r.notification_id)})}
- const b=$('notifBadge');b.textContent=ids.length;b.classList.toggle('hide',!ids.length);
- $('nList').innerHTML=ids.length?data.map(n=>`<div class="it" style="margin:0;background:${NMY.has(n.id)?'#f8fafc':'#eff6ff'}" onmouseenter="nHover('${n.id}')" onmouseleave="clearTimeout(NT)" ontouchstart="nHover('${n.id}')" ontouchend="clearTimeout(NT)">
+ const k=(data||[]).filter(n=>!own(n)).length,b=$('notifBadge');b.textContent=k;b.classList.toggle('hide',!k);
+ if(nOpen()&&!force)return;
+ nStop();
+ $('nList').innerHTML=ids.length?data.map(n=>{const o=own(n);return `<div class="it" ${o?'':`data-id="${n.id}"`} style="margin:0;background:${NMY.has(n.id)||o?'#f8fafc':'#eff6ff'}">
   ${me.is_admin?`<button class="lnk" style="float:left;color:#e11d48" onclick="nDel('${n.id}')">✕</button>`:''}
   <div style="font-weight:700;font-size:13px">${e(n.title)}</div><div style="font-size:12px">${e(n.body)}</div>
-  <small>${fdt(n.created_at)} • قرأها: <b id="nc_${n.id}">${cnt[n.id]||0}</b></small></div>`).join(''):'<p style="color:#94a3b8;text-align:center">لا توجد إشعارات</p>';
+  <small>${fdt(n.created_at)} • قرأها: <b id="nc_${n.id}">${cnt[n.id]||0}</b></small>
+  ${o?'':`<span id="nr_${n.id}" style="color:#16a34a;font-weight:700;font-size:12px;float:left">${NMY.has(n.id)?'✓ مقروء':''}</span>`}</div>`}).join(''):'<p style="color:#94a3b8;text-align:center">لا توجد إشعارات</p>';
+ nWatch();
 }
-function nHover(id){
- clearTimeout(NT);if(me.is_admin||NMY.has(id))return;
- NT=setTimeout(async()=>{NMY.add(id);const {error}=await sb.from('notification_reads').insert({notification_id:id,user_id:me.id});
-  if(!error){const c=$('nc_'+id);if(c)c.textContent=+c.textContent+1}},3000);
+function nWatch(){
+ NOBS=new IntersectionObserver(es=>es.forEach(x=>{
+  const id=x.target.dataset.id;
+  if(x.isIntersecting&&!NMY.has(id)&&!NTM[id])NTM[id]=setTimeout(()=>nRead(id),3000);
+  else if(!x.isIntersecting&&NTM[id]){clearTimeout(NTM[id]);delete NTM[id]}
+ }),{root:$('nList'),threshold:0.6});
+ $('nList').querySelectorAll('[data-id]').forEach(el=>NOBS.observe(el));
+}
+async function nRead(id){
+ delete NTM[id];if(NMY.has(id))return;NMY.add(id);
+ const {error}=await sb.from('notification_reads').insert({notification_id:id,user_id:me.id});
+ if(error&&error.code!=='23505'){NMY.delete(id);return}
+ const c=$('nc_'+id),r=$('nr_'+id),el=document.querySelector(`#nList [data-id="${id}"]`);
+ if(c&&!error)c.textContent=+c.textContent+1;if(r)r.textContent='✓ مقروء';if(el)el.style.background='#f8fafc';
 }
 async function nDel(id){if(!confirm('حذف الإشعار للجميع؟'))return;const {error}=await sb.from('notifications').delete().eq('id',id);if(error)return alert(error.message);loadNotifications()}
 function nLimToggle(){const b=$('nLimBox');b.classList.toggle('hide');$('nLimIn').value=me.notif_limit||50}
@@ -291,7 +308,7 @@ NP.innerHTML=`<div class="bar"><h1>إرسال الإشعارات</h1></div><div 
 <div style="margin-top:14px"><button class="btn p" onclick="nSend()">📢 إرسال لجميع الموظفين</button></div></div>`;
 async function nSend(){
  const b=$('nsB').value.trim();if(b.length<2)return alert('اكتب الإشعار');
- const {error}=await sb.from('notifications').insert({user_id:null,title:'إشعار من '+me.full_name,body:b});if(error)return alert(error.message);
+ const {error}=await sb.from('notifications').insert({user_id:null,sender_id:me.id,title:'إشعار من '+me.full_name,body:b});if(error)return alert(error.message);
  $('nsB').value='';alert('تم الإرسال');loadNotifications();
 }
 const nTimer=setInterval(()=>{if(typeof me!=='undefined'&&me&&me.id){clearInterval(nTimer);
