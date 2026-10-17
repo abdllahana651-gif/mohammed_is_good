@@ -7,8 +7,7 @@ const IC={
  rem:S('<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/>'),
  tr:S('<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>'),
  ed:S('<path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>'),
- pj:S('<path d="M2 21V10l6 4v-4l6 4V5h8v16H2z"/><path d="M6 18h2M11 18h2M16 18h2"/>'),
- vw:S('<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>')};
+ pj:S('<path d="M2 21V10l6 4v-4l6 4V5h8v16H2z"/><path d="M6 18h2M11 18h2M16 18h2"/>')};
 
 // ---- جدول العملاء: عمود الإجراءات ----
 {const th=$('tb').closest('table').querySelectorAll('th');th[6].remove();th[5].textContent='الإجراءات'}
@@ -48,11 +47,11 @@ function Pact(){
   t[0].style.cursor='pointer';t[0].title='عرض';
   t[0].onclick=ev=>{ev.preventDefault();Pview(id)};
   const B=(k,c,tt)=>`<button class="ab ${c}" title="${tt}" onclick="PCa('${k}','${id}')">${IC[k]}</button>`;
-  t[6].innerHTML=B('vw','b','عرض')+B('ed','v','تعديل')+B('del','r','حذف');
+  t[6].innerHTML=B('ed','v','تعديل')+B('del','r','حذف');
  });
 }
 function PCa(k,id){Cf(()=>{
- if(k==='vw')Pview(id);else if(k==='ed')Pform(id);else if(k==='del')PdelNow(id)})}
+ if(k==='ed')Pform(id);else if(k==='del')PdelNow(id)})}
 async function PdelNow(id){const {error}=await sb.from('projects').delete().eq('id',id);if(error)return alert(error.message);Pload()}
 // ---- تذكيرات المتابعة ----
 const p2=n=>String(n).padStart(2,'0'),AR=n=>String(n).replace(/\d/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
