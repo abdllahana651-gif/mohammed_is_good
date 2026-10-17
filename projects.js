@@ -41,7 +41,7 @@ function Pdraw(){
   if(PF.day&&t.toLocaleDateString('en-CA')!==PF.day)return false;
   return true});
   if(PF.o)l.sort((a,b)=>a.avg==null?(b.avg==null?0:1):b.avg==null?-1:PF.o==='asc'?a.avg-b.avg:b.avg-a.avg);
- $('ptb').innerHTML=l.map(p=>`<tr><td><div class="cl"><div class="av" style="background:#bbf7d0">${e(p.name.slice(0,2))}</div><div>${e(p.name)} ${p.lat?`<a href="#" onclick="Pshow('${p.id}');return false" title="عرض على الخريطة">📍</a>`:''}<small style="direction:rtl">${e(p.city)} - ${e(p.district)}</small></div></div></td>
+ $('ptb').innerHTML=l.map(p=>`<tr><td><div class="cl"><div class="av" style="background:#bbf7d0">${e(p.name.slice(0,2))}</div><div>${e(p.name)} <small style="direction:rtl">${e(p.city)} - ${e(p.district)}</small></div></div></td>
  <td><b>${e(p.type)}</b></td><td><b>${e(p.status)}</b></td><td><b>${Ppr(p)}</b></td><td><b>${fd(p.created_at)}</b></td><td><b>${fd(p.last_activity)}</b></td>
  <td><div class="mn"><button class="btn" onclick="Pmnu(event,'${p.id}')">⋮</button></div></td></tr>`).join('')||'<tr><td colspan="7" style="text-align:center;color:#94a3b8">لا توجد مشاريع</td></tr>';
 }
@@ -266,11 +266,11 @@ async function loadNotifications(force){
  const own=n=>n.sender_id===me.id,ids=(data||[]).map(n=>n.id),cnt={};
  if(ids.length){const {data:rd}=await sb.from('notification_reads').select('notification_id,user_id').in('notification_id',ids);
   (rd||[]).forEach(r=>{cnt[r.notification_id]=(cnt[r.notification_id]||0)+1;if(r.user_id===me.id)NMY.add(r.notification_id)})}
- const k=(data||[]).filter(n=>!own(n)).length,b=$('notifBadge');b.textContent=k;b.classList.toggle('hide',!k);
+ const k=(data||[]).filter(n=>!own(n)&&!NMY.has(n.id)).length,b=$('notifBadge');b.textContent=k;b.classList.toggle('hide',!k);
  if(nOpen()&&!force)return;
  nStop();
  $('nList').innerHTML=ids.length?data.map(n=>{const o=own(n);return `<div class="it" ${o?'':`data-id="${n.id}"`} style="margin:0;background:${NMY.has(n.id)||o?'#f8fafc':'#eff6ff'}">
-  ${me.is_admin?`<button class="lnk" style="float:left;color:#e11d48" onclick="nDel('${n.id}')">✕</button>`:''}
+  ${o?`<button class="lnk" style="float:left;color:#e11d48" onclick="nDel('${n.id}')">✕</button>`:''}
   <div style="font-weight:700;font-size:13px">${e(n.title)}</div><div style="font-size:12px">${e(n.body)}</div>
   <small>${fdt(n.created_at)} • قرأها: <b id="nc_${n.id}">${cnt[n.id]||0}</b></small>
   ${o?'':`<span id="nr_${n.id}" style="color:#16a34a;font-weight:700;font-size:12px;float:left">${NMY.has(n.id)?'✓ مقروء':''}</span>`}</div>`}).join(''):'<p style="color:#94a3b8;text-align:center">لا توجد إشعارات</p>';
@@ -288,10 +288,17 @@ async function nRead(id){
  delete NTM[id];if(NMY.has(id))return;NMY.add(id);
  const {error}=await sb.from('notification_reads').insert({notification_id:id,user_id:me.id});
  if(error&&error.code!=='23505'){NMY.delete(id);return}
+ const bd=$('notifBadge'),left=Math.max(0,(+bd.textContent||0)-1);bd.textContent=left;bd.classList.toggle('hide',!left);
  const c=$('nc_'+id),r=$('nr_'+id),el=document.querySelector(`#nList [data-id="${id}"]`);
  if(c&&!error)c.textContent=+c.textContent+1;if(r)r.textContent='✓ مقروء';if(el)el.style.background='#f8fafc';
 }
-async function nDel(id){if(!confirm('حذف الإشعار للجميع؟'))return;const {error}=await sb.from('notifications').delete().eq('id',id);if(error)return alert(error.message);loadNotifications()}
+async function nDel(id){
+ if(!confirm('حذف الإشعار للجميع؟'))return;
+ const {error,count}=await sb.from('notifications').delete({count:'exact'}).eq('id',id);
+ if(error)return alert(error.message);
+ if(!count)return alert('فقط من أرسل الإشعار يقدر يحذفه');
+ loadNotifications(true);
+}
 function nLimToggle(){const b=$('nLimBox');b.classList.toggle('hide');$('nLimIn').value=me.notif_limit||50}
 async function nLimSave(){
  const v=Math.round(+$('nLimIn').value);if(!(v>=1&&v<=100))return alert('اختر رقماً من 1 إلى 100');
@@ -304,7 +311,7 @@ $('sub2').insertAdjacentHTML('afterend','<a id="mg3" class="grp" style="display:
 $('mg3').onclick=()=>{const o=$('sub3').classList.toggle('hide');$('ar3').textContent=o?'‹':'⌄'};
 $('nS').onclick=()=>Pgo(2);
 const NP=document.createElement('div');NP.className='page hide';PP.after(NP);
-NP.innerHTML=`<div class="bar"><h1>إرسال الإشعارات</h1></div><div style="max-width:600px"><label>نص الإشعار</label><textarea id="nsB" rows="5" placeholder="اكتب الإشعار هنا..."></textarea>
+NP.innerHTML=`<div class="bar"><h1>إرسال الإشعارات</h1></div><div style="max-width:600px"><label>نص الإشعار</label><textarea id="nsB" rows="5" placeholder="لكتابة الإشعار"></textarea>
 <div style="margin-top:14px"><button class="btn p" onclick="nSend()">📢 إرسال لجميع الموظفين</button></div></div>`;
 async function nSend(){
  const b=$('nsB').value.trim();if(b.length<2)return alert('اكتب الإشعار');
